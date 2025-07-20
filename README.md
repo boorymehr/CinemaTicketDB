@@ -1,3 +1,3 @@
 # CinemaTicketDB سیستم خرید بلیط سینما 
 
-![نمایش پروژه](Untitled.jpg)
+![نمایش پروژه](Untitled.png)
