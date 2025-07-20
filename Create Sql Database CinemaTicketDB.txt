@@ -1,0 +1,176 @@
+
+
+CREATE DATABASE CinemaTicketDB;
+GO
+
+USE CinemaTicketDB;
+GO
+
+
+
+CREATE TABLE Users (
+    UserID INT IDENTITY(1,1) PRIMARY KEY,
+    FullName NVARCHAR(100),
+    Email NVARCHAR(100) UNIQUE,
+    PhoneNumber NVARCHAR(15),
+    RegisterDate DATETIME DEFAULT GETDATE()
+);
+
+
+
+CREATE TABLE Movies (
+    MovieID INT IDENTITY(1,1) PRIMARY KEY,
+    Title NVARCHAR(150),
+    Genre NVARCHAR(50),
+    DurationMinutes INT,
+    ReleaseDate DATE
+);
+
+
+
+
+
+CREATE TABLE Halls (
+    HallID INT IDENTITY(1,1) PRIMARY KEY,
+    HallName NVARCHAR(50),
+    Capacity INT
+);
+
+
+
+
+
+CREATE TABLE Showtimes (
+    ShowtimeID INT IDENTITY(1,1) PRIMARY KEY,
+    MovieID INT FOREIGN KEY REFERENCES Movies(MovieID),
+    HallID INT FOREIGN KEY REFERENCES Halls(HallID),
+    ShowDate DATE,
+    ShowTime TIME
+);
+
+
+
+
+
+CREATE TABLE Tickets (
+    TicketID INT IDENTITY(1,1) PRIMARY KEY,
+    UserID INT FOREIGN KEY REFERENCES Users(UserID),
+    ShowtimeID INT FOREIGN KEY REFERENCES Showtimes(ShowtimeID),
+    SeatNumber NVARCHAR(10),
+    PurchaseDate DATETIME DEFAULT GETDATE(),
+    Price DECIMAL(10, 2)
+);
+
+
+
+INSERT INTO Users (FullName, Email, PhoneNumber) VALUES
+(N'علی رضایی', 'ali.rezaei@example.com', '09121234567'),
+(N'سارا محمدی', 'sara.mohamadi@example.com', '09351234567'),
+(N'مهدی کریمی', 'mehdi.karimi@example.com', '09201234567'),
+(N'نگین احمدی', 'negin.ahmadi@example.com', '09191234567'),
+(N'پویا موسوی', 'pouya.mousavi@example.com', '09187894567');
+
+
+
+
+
+INSERT INTO Movies (Title, Genre, DurationMinutes, ReleaseDate) VALUES
+(N'انتقام‌جویان: پایان بازی', N'اکشن', 181, '2019-04-26'),
+(N'جوکر', N'درام', 122, '2019-10-04'),
+(N'گلادیاتور', N'تاریخی', 155, '2000-05-01'),
+(N'اینترستلار', N'علمی-تخیلی', 169, '2014-11-07'),
+(N'شوالیه تاریکی', N'اکشن', 152, '2008-07-18');
+
+
+
+INSERT INTO Halls (HallName, Capacity) VALUES
+(N'سالن ۱', 100),
+(N'سالن ۲', 80),
+(N'سالن ۳', 120),
+(N'سالن VIP', 40),
+(N'سالن خانوادگی', 60);
+
+
+
+
+INSERT INTO Showtimes (MovieID, HallID, ShowDate, ShowTime) VALUES
+(1, 1, '2025-07-20', '18:00'),
+(2, 2, '2025-07-20', '20:30'),
+(3, 3, '2025-07-21', '17:00'),
+(4, 4, '2025-07-21', '21:00'),
+(5, 5, '2025-07-22', '19:00');
+
+
+
+
+INSERT INTO Showtimes (MovieID, HallID, ShowDate, ShowTime) VALUES
+(1, 1, '2025-07-20', '18:00'),
+(2, 2, '2025-07-20', '20:30'),
+(3, 3, '2025-07-21', '17:00'),
+(4, 4, '2025-07-21', '21:00'),
+(5, 5, '2025-07-22', '19:00');
+
+
+
+
+
+
+INSERT INTO Tickets (UserID, ShowtimeID, SeatNumber, Price) VALUES
+(1, 1, 'A1', 150000),
+(2, 1, 'A2', 150000),
+(3, 2, 'B5', 130000),
+(4, 4, 'VIP1', 250000),
+(5, 5, 'C3', 120000);
+
+
+
+
+
+
+
+
+--دیدن بلیط‌های خریداری‌شده توسط یک کاربر خاص
+SELECT 
+    T.TicketID,
+    U.FullName,
+    M.Title AS MovieTitle,
+    S.ShowDate,
+    S.ShowTime,
+    T.SeatNumber,
+    T.Price,
+    T.PurchaseDate
+FROM Tickets T
+JOIN Users U ON T.UserID = U.UserID
+JOIN Showtimes S ON T.ShowtimeID = S.ShowtimeID
+JOIN Movies M ON S.MovieID = M.MovieID
+WHERE U.Email = 'ali.rezaei@example.com';
+
+
+
+
+
+--دیدن سانس‌های یک فیلم در روز خاص
+SELECT 
+    M.Title,
+    S.ShowDate,
+    S.ShowTime,
+    H.HallName
+FROM Showtimes S
+JOIN Movies M ON S.MovieID = M.MovieID
+JOIN Halls H ON S.HallID = H.HallID
+WHERE M.Title = N'جوکر' AND S.ShowDate = '2025-07-20';
+
+
+
+
+--بررسی ظرفیت باقی‌مانده سالن در یک سانس خاص
+SELECT 
+    H.HallName,
+    H.Capacity,
+    COUNT(T.TicketID) AS TicketsSold,
+    H.Capacity - COUNT(T.TicketID) AS SeatsRemaining
+FROM Showtimes S
+JOIN Halls H ON S.HallID = H.HallID
+LEFT JOIN Tickets T ON S.ShowtimeID = T.ShowtimeID
+WHERE S.ShowtimeID = 1
+GROUP BY H.HallName, H.Capacity;
